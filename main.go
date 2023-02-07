@@ -1,75 +1,55 @@
 package main
 
 import (
-	"encoding/json"
+	"conversor/internal"
 	"fmt"
-	"os"
-
-	"github.com/tealeg/xlsx"
+	"net/http"
+	"text/template"
 )
 
-type User struct {
-	CPF  string `json:"CPF"`
-	Data string `json:"Data"`
+func htmlHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./templates/fileUpload.html")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	t.Execute(w, nil)
+}
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	jsonFile, _, err := r.FormFile("jsonFile")
+	if err != nil {
+		http.Error(w, "Erro ao ler o arquivo json: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer jsonFile.Close()
+
+	xlsxFile, _, err := r.FormFile("xlsxFile")
+	if err != nil {
+		http.Error(w, "Erro ao ler o arquivo xlsx: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer xlsxFile.Close()
+
+	internal.LogicConverterFiles()
+	w.Write([]byte("Arquivos convertidos com sucesso!"))
+
 }
 
 func main() {
-	file, err := os.Open("data.json")
+
+	fs := http.FileServer(http.Dir("assets"))
+	http.Handle("/assets/", http.StripPrefix("/assets", fs))
+
+	http.HandleFunc("/upload", uploadHandler)
+	http.HandleFunc("/", htmlHandler)
+
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		fmt.Println(err)
-		return
+		fmt.Println("Erro ao iniciar o servidor:", err)
 	}
-	defer file.Close()
-
-	var users map[string]User
-
-	err = json.NewDecoder(file).Decode(&users)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	excelFileName := "report.xlsx"
-	xlFile, err := xlsx.OpenFile(excelFileName)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	var matches [][]string
-	for _, sheet := range xlFile.Sheets {
-		for _, row := range sheet.Rows {
-			if len(row.Cells) > 1 {
-				userXLSX := row.Cells[0].String()
-				nameXLSX := row.Cells[1].String()
-
-				for _, userJSON := range users {
-					if userJSON.CPF == userXLSX {
-						matches = append(matches, []string{userJSON.CPF, nameXLSX})
-					}
-				}
-			}
-		}
-	}
-	fileX := xlsx.NewFile()
-	sheet, err := fileX.AddSheet("Matchs")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	for _, match := range matches {
-		row := sheet.AddRow()
-		row.AddCell().Value = match[0]
-		row.AddCell().Value = match[1]
-	}
-
-	err = fileX.Save("Matchs.xlsx")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("Matchs salvo em Matchs.xlsx")
-
 }
