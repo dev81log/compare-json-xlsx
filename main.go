@@ -14,7 +14,6 @@ type User struct {
 }
 
 func main() {
-	// Leitura do arquivo .json
 	file, err := os.Open("data.json")
 	if err != nil {
 		fmt.Println(err)
@@ -30,7 +29,6 @@ func main() {
 		return
 	}
 
-	// Leitura do arquivo .xlsx
 	excelFileName := "report.xlsx"
 	xlFile, err := xlsx.OpenFile(excelFileName)
 	if err != nil {
@@ -38,17 +36,40 @@ func main() {
 		return
 	}
 
+	var matches [][]string
 	for _, sheet := range xlFile.Sheets {
 		for _, row := range sheet.Rows {
-			// Acessando a coluna "Usuário"
-			userXLSX := row.Cells[0].String()
+			if len(row.Cells) > 1 {
+				userXLSX := row.Cells[0].String()
+				nameXLSX := row.Cells[1].String()
 
-			// Comparando o "CPF" em cada objeto do arquivo .json
-			for _, userJSON := range users {
-				if userJSON.CPF == userXLSX {
-					fmt.Println("Match found:", userJSON.CPF)
+				for _, userJSON := range users {
+					if userJSON.CPF == userXLSX {
+						matches = append(matches, []string{userJSON.CPF, nameXLSX})
+					}
 				}
 			}
 		}
 	}
+	fileX := xlsx.NewFile()
+	sheet, err := fileX.AddSheet("Matchs")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	for _, match := range matches {
+		row := sheet.AddRow()
+		row.AddCell().Value = match[0]
+		row.AddCell().Value = match[1]
+	}
+
+	err = fileX.Save("Matchs.xlsx")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("Matchs salvo em Matchs.xlsx")
+
 }
