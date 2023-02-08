@@ -13,7 +13,7 @@ type User struct {
 	Data string `json:"Data"`
 }
 
-func LogicConverterFiles() {
+func ConverterFiles() {
 	file, err := os.Open("./upload/data.json")
 	if err != nil {
 		fmt.Println(err)
@@ -52,7 +52,7 @@ func LogicConverterFiles() {
 		}
 	}
 	fileX := xlsx.NewFile()
-	sheet, err := fileX.AddSheet("Matchs")
+	sheet, err := fileX.AddSheet("Matches")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -70,5 +70,5 @@ func LogicConverterFiles() {
 		return
 	}
 
-	fmt.Println("Matchs salvo em relatorio.xlsx")
+	fmt.Println("Pessoas encontradas e salvo em relatório.xlsx")
 }
