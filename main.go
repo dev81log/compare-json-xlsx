@@ -13,6 +13,7 @@ func main() {
 
 	http.HandleFunc("/upload", internal.UploadHandler)
 	http.HandleFunc("/", internal.HtmlHandler)
+	http.HandleFunc("/download", internal.DownloadHandler)
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
