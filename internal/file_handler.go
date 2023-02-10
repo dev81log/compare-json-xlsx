@@ -54,13 +54,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(j, xlsxFile)
 
 	ConverterFiles()
-	w.Write([]byte("Arquivos convertidos com sucesso!\n"))
-
 }
-
 func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "attachment; filename=relatorio.xlsx")
 	http.ServeFile(w, r, "upload/relatorio.xlsx")
-	w.Write([]byte("Download iniciado automaticamente..."))
-
+	fmt.Println("Download concluído")
 }

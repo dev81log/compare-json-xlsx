@@ -14,16 +14,17 @@ type User struct {
 }
 
 func ConverterFiles() {
-	file, err := os.Open("./upload/data.json")
+	jsonFileName := "./upload/data.json"
+	jsFile, err := os.Open(jsonFileName)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer file.Close()
+	defer jsFile.Close()
 
 	var users map[string]User
 
-	err = json.NewDecoder(file).Decode(&users)
+	err = json.NewDecoder(jsFile).Decode(&users)
 	if err != nil {
 		fmt.Println(err)
 		return
