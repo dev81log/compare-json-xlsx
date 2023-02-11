@@ -13,28 +13,27 @@ type User struct {
 	Data string `json:"Data"`
 }
 
-func ConverterFiles() {
-	jsonFileName := "./upload/data.json"
-	jsFile, err := os.Open(jsonFileName)
+const (
+	JsonFileName = "./upload/data.json"
+	XlsxFileName = "./upload/data.xlsx"
+)
+
+func ConverterJSONToXLSX() error {
+	jsFile, err := os.Open(JsonFileName)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return fmt.Errorf("erro ao abrir o arquivo JSON: %v", err)
 	}
 	defer jsFile.Close()
 
 	var users map[string]User
-
 	err = json.NewDecoder(jsFile).Decode(&users)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return fmt.Errorf("erro ao decodificar o arquivo JSON: %v", err)
 	}
 
-	excelFileName := "./upload/data.xlsx"
-	xlFile, err := xlsx.OpenFile(excelFileName)
+	xlFile, err := xlsx.OpenFile(XlsxFileName)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return fmt.Errorf("erro ao abrir o arquivo XLSX: %v", err)
 	}
 
 	var matches [][]string
@@ -52,11 +51,16 @@ func ConverterFiles() {
 			}
 		}
 	}
+	saveXLSXFile(matches)
+
+	return nil
+}
+
+func saveXLSXFile(matches [][]string) error {
 	fileX := xlsx.NewFile()
 	sheet, err := fileX.AddSheet("Matches")
 	if err != nil {
-		fmt.Println(err)
-		return
+		return fmt.Errorf("erro ao criar uma nova planilha: %v", err)
 	}
 
 	for _, match := range matches {
@@ -65,11 +69,10 @@ func ConverterFiles() {
 		row.AddCell().Value = match[1]
 	}
 
-	err = fileX.Save("./upload/relatorio.xlsx")
+	err = fileX.Save("./upload/report.xlsx")
 	if err != nil {
-		fmt.Println(err)
-		return
+		return fmt.Errorf("erro ao salvar o arquivo XLSX: %v", err)
 	}
 
-	fmt.Println("Pessoas encontradas e salvo em relatório.xlsx")
+	return nil
 }

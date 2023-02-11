@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func HtmlHandler(w http.ResponseWriter, r *http.Request) {
+func RenderHTML(w http.ResponseWriter, r *http.Request) {
 	tmp, err := template.ParseFiles("./templates/fileUpload.html")
 	if err != nil {
 		fmt.Println(err)
@@ -17,7 +17,7 @@ func HtmlHandler(w http.ResponseWriter, r *http.Request) {
 	tmp.Execute(w, nil)
 }
 
-func UploadHandler(w http.ResponseWriter, r *http.Request) {
+func HandleFileUpload(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
@@ -38,28 +38,26 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer xlsxFile.Close()
 
-	jsonOpen, err := os.OpenFile("./upload/"+jsonHandler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println(err)
+	files := map[string]io.Reader{
+		jsonHandler.Filename: jsonFile,
+		xlsxHandler.Filename: xlsxFile,
 	}
-	defer jsonOpen.Close()
 
-	xlsxOpen, err := os.OpenFile("./upload/"+xlsxHandler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println(err)
+	for filename, file := range files {
+		destination, err := os.OpenFile("./upload/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer destination.Close()
+		io.Copy(destination, file)
 	}
-	defer xlsxOpen.Close()
 
-	io.Copy(jsonOpen, jsonFile)
-	io.Copy(xlsxOpen, xlsxFile)
-
-	defer ConverterFiles()                             // call converter function
-	http.Redirect(w, r, "/download", http.StatusFound) // redirect to download page
+	defer ConverterJSONToXLSX()                        // call converter function
+	http.Redirect(w, r, "/download", http.StatusFound) // redirect to download page don't remove this line
 }
 
-func DownloadHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Disposition", "attachment; filename=relatorio.xlsx")
-	http.ServeFile(w, r, "upload/relatorio.xlsx")
-
-	fmt.Println("Download concluído")
+func ServeFileDownload(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Disposition", "attachment; filename=report.xlsx")
+	http.ServeFile(w, r, "upload/report.xlsx")
 }
